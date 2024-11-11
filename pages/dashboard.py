@@ -128,7 +128,7 @@ class FinanceDashboard:
             return None
 
     def plot_income_vs_expenses(self) -> go.Figure:
-        """Create income vs expenses bar chart with category filtering"""
+        """Create income vs expenses bar chart with category filtering and month selection"""
         try:
             income_data = st.session_state.finance_data['income']
             expense_data = st.session_state.finance_data['expenses']
@@ -175,11 +175,64 @@ class FinanceDashboard:
                 hovermode='x unified'
             )
             
+            # Store available months for analysis
+            st.session_state.available_months = expenses_monthly.index.astype(str).tolist()
+            
             return fig
             
         except Exception as e:
             logger.error(f"Error creating income vs expenses plot: {e}")
             return None
+
+    def show_monthly_analysis(self, selected_month: str = None) -> None:
+        """Show detailed analysis for selected month"""
+        try:
+            income_data = st.session_state.finance_data['income']
+            expense_data = st.session_state.finance_data['expenses']
+            
+            # Get current month and selected month
+            current_month = pd.Period(datetime.now(), freq='M')
+            
+            if selected_month:
+                try:
+                    analysis_month = pd.Period(selected_month, freq='M')
+                except:
+                    analysis_month = current_month
+            else:
+                analysis_month = current_month
+            
+            # Calculate metrics for selected month
+            month_income = income_data[
+                income_data['Date'].dt.to_period('M') == analysis_month
+            ]['Amount'].sum()
+            
+            month_expenses = expense_data[
+                expense_data['Date'].dt.to_period('M') == analysis_month
+            ]['Amount'].sum()
+            
+            savings_rate = ((month_income - month_expenses) / month_income * 100 
+                           if month_income > 0 else 0)
+            
+            # Display analysis
+            st.write(f"""
+            💡 **Анализ за {analysis_month.strftime('%B %Y')}:**
+            - Доходы: {month_income:,.0f} ₽
+            - Расходы: {month_expenses:,.0f} ₽
+            - Норма сбережений: {savings_rate:.1f}%
+            """)
+            
+            # Show category breakdown for selected month
+            month_expenses_by_category = expense_data[
+                expense_data['Date'].dt.to_period('M') == analysis_month
+            ].groupby('Category')['Amount'].sum().sort_values(ascending=False)
+            
+            st.write("**Расходы по категориям:**")
+            for cat, amount in month_expenses_by_category.items():
+                st.write(f"- {cat}: {amount:,.0f} ₽")
+                
+        except Exception as e:
+            logger.error(f"Error showing monthly analysis: {e}")
+            st.error("Ошибка при отображении анализа")
 
     def plot_expense_breakdown(self) -> go.Figure:
         """Create expense breakdown pie chart"""
@@ -403,12 +456,20 @@ class FinanceDashboard:
             # Category filters for multiple charts
             expense_data = st.session_state.finance_data['expenses']
             categories = sorted(expense_data['Category'].unique())
-            selected_categories = st.multiselect(
-                "Фильтр категорий расходов",
-                categories,
-                default=categories,
-                help="Выберите категории для отображения в графиках расходов и бюджета"
-            )
+            
+            # Add "Select All" option
+            col1, col2 = st.columns([1, 4])
+            with col1:
+                if st.button("Выбрать все"):
+                    st.session_state.selected_categories = categories
+            
+            with col2:
+                selected_categories = st.multiselect(
+                    "Фильтр категорий расходов",
+                    categories,
+                    default=st.session_state.get('selected_categories', categories),
+                    help="Выберите категории для отображения в графиках расходов и бюджета"
+                )
             
             # Update session state
             st.session_state.time_range = time_range
@@ -422,7 +483,12 @@ class FinanceDashboard:
             st.error("Ошибка при добавлении интерактивных элементов")
 
 def main():
-    st.title("Финансовый дашборд")
+    st.title("Финансо��ый дашборд")
+    
+    # Check authentication
+    if not st.session_state.get('authenticated', False) and get_auth_required():
+        st.warning("Пожалуйста, выполните вход в систему")
+        return
     
     dashboard = FinanceDashboard()
     
@@ -430,7 +496,7 @@ def main():
     st.markdown("""
     ### Формат данных
     Файл Excel должен содержать следующие листы:
-    1. **Net Worth Table** (Чистая стоимость)
+    1. **Net Worth Table** (Чистая ��тоимость)
        - Date: Дата
        - Assets: Активы
        - Liabilities: Обязательства
@@ -496,15 +562,18 @@ def main():
                     if fig_income_expenses:
                         st.plotly_chart(fig_income_expenses, use_container_width=True)
                         
-                        # Add monthly analysis
+                        # Add monthly analysis with month selection
                         if st.checkbox("Показать детальный анализ"):
-                            insights = dashboard.calculate_insights()
-                            st.write(f"""
-                            💡 **Анализ за текущий месяц:**
-                            - Доходы: {insights['monthly']['income']:,.0f} ₽
-                            - Расходы: {insights['monthly']['expenses']:,.0f} ₽
-                            - Норма сбережений: {insights['monthly']['savings_rate']:.1f}%
-                            """)
+                            available_months = st.session_state.get('available_months', [])
+                            if available_months:
+                                selected_month = st.selectbox(
+                                    "Выберите месяц для анализа",
+                                    options=available_months,
+                                    index=len(available_months)-1  # Default to latest month
+                                )
+                                dashboard.show_monthly_analysis(selected_month)
+                            else:
+                                dashboard.show_monthly_analysis()  # Show current month if no data available
                 
                 with tab3:
                     fig_expenses = dashboard.plot_expense_breakdown()
