@@ -6,6 +6,87 @@ from utils.helpers import logger, load_config, get_debug_status
 import bcrypt
 from typing import Dict, Optional
 
+# Configure page settings with dark theme
+st.set_page_config(
+    page_title="Личный Финансовый Дашборд",
+    page_icon="💰",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': None,
+        'Report a bug': None,
+        'About': None
+    },
+    theme={
+        "base": "dark",
+        "primaryColor": "#3498db",
+        "backgroundColor": "#0e1117",
+        "secondaryBackgroundColor": "#262730",
+        "textColor": "#fafafa",
+    }
+)
+
+# Add dark theme styles
+st.markdown("""
+    <style>
+        /* Main container */
+        .stApp {
+            background-color: #0E1117 !important;
+        }
+        
+        /* Sidebar */
+        [data-testid="stSidebar"] {
+            background-color: #262730 !important;
+        }
+        
+        /* All text */
+        .stMarkdown, p, .stText {
+            color: #FFFFFF !important;
+        }
+        
+        /* Headers */
+        h1, h2, h3, h4, h5, h6 {
+            color: #FFFFFF !important;
+        }
+        
+        /* Form inputs */
+        .stTextInput input, .stTextInput div {
+            background-color: #262730 !important;
+            color: #FFFFFF !important;
+        }
+        
+        /* Buttons */
+        .stButton button {
+            background-color: #3498db !important;
+            color: #FFFFFF !important;
+            border: none !important;
+        }
+        
+        /* Button hover */
+        .stButton button:hover {
+            background-color: #2980b9 !important;
+        }
+        
+        /* Force dark theme */
+        [data-testid="stAppViewContainer"] {
+            background-color: #0E1117 !important;
+        }
+        
+        [data-testid="stHeader"] {
+            background-color: #0E1117 !important;
+        }
+        
+        [data-testid="stToolbar"] {
+            background-color: #0E1117 !important;
+        }
+        
+        /* Ensure text remains visible */
+        * {
+            color: #FFFFFF !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 class AuthenticationManager:
     def __init__(self):
         self.debug_mode = get_debug_status()

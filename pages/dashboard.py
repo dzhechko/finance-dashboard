@@ -18,6 +18,13 @@ st.set_page_config(
         'Get Help': None,
         'Report a bug': None,
         'About': None
+    },
+    theme={
+        "base": "dark",
+        "primaryColor": "#3498db",
+        "backgroundColor": "#0e1117",
+        "secondaryBackgroundColor": "#262730",
+        "textColor": "#fafafa",
     }
 )
 

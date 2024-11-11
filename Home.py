@@ -14,60 +14,15 @@ st.set_page_config(
         'Get Help': None,
         'Report a bug': None,
         'About': None
+    },
+    theme={
+        "base": "dark",
+        "primaryColor": "#3498db",
+        "backgroundColor": "#0e1117",
+        "secondaryBackgroundColor": "#262730",
+        "textColor": "#fafafa",
     }
 )
-
-# Set dark theme
-st.markdown("""
-    <style>
-        /* Main background */
-        .stApp {
-            background-color: #0e1117;
-            color: #fafafa;
-        }
-        
-        /* Sidebar */
-        .css-1d391kg {
-            background-color: #262730;
-        }
-        
-        /* Text color */
-        .stMarkdown, .stText {
-            color: #fafafa;
-        }
-        
-        /* Headers */
-        h1, h2, h3, h4, h5, h6 {
-            color: #fafafa !important;
-        }
-        
-        /* Metric labels */
-        [data-testid="stMetricLabel"] {
-            color: #fafafa !important;
-        }
-        
-        /* Metric values */
-        [data-testid="stMetricValue"] {
-            color: #fafafa !important;
-        }
-        
-        /* Sidebar menu styling */
-        .css-1d391kg .stSelectbox label {  /* Sidebar labels */
-            color: #fafafa;
-        }
-        
-        /* Sidebar menu items */
-        .css-1d391kg [data-testid="stSidebarNav"] {
-            background-color: #262730;
-            padding-top: 2rem;
-        }
-        
-        /* Sidebar menu item hover */
-        .css-1d391kg [data-testid="stSidebarNav"] a:hover {
-            background-color: #3498db;
-        }
-    </style>
-""", unsafe_allow_html=True)
 
 def main():
     # Automatically redirect to Authentication page
