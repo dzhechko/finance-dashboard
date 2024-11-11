@@ -50,12 +50,28 @@ st.markdown("""
         [data-testid="stMetricValue"] {
             color: #fafafa !important;
         }
+        
+        /* Sidebar menu styling */
+        .css-1d391kg .stSelectbox label {  /* Sidebar labels */
+            color: #fafafa;
+        }
+        
+        /* Sidebar menu items */
+        .css-1d391kg [data-testid="stSidebarNav"] {
+            background-color: #262730;
+            padding-top: 2rem;
+        }
+        
+        /* Sidebar menu item hover */
+        .css-1d391kg [data-testid="stSidebarNav"] a:hover {
+            background-color: #3498db;
+        }
     </style>
 """, unsafe_allow_html=True)
 
 def main():
-    # Automatically redirect to Dashboard page
-    st.switch_page("pages/1_📊_Dashboard.py")
+    # Automatically redirect to Authentication page
+    st.switch_page("pages/1_🔐_Вход.py")
 
 if __name__ == "__main__":
     main() 

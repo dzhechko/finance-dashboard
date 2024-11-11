@@ -131,26 +131,34 @@ class FinanceDashboard:
     def get_time_filtered_data(self, data: pd.DataFrame, time_range: str) -> pd.DataFrame:
         """Filter data based on selected time range"""
         try:
-            if time_range == "MAX":
+            if time_range == "MAX" or data.empty:
                 return data
                 
-            # Get current date
-            current_date = pd.Timestamp.now()
+            # Get the latest date in the data
+            latest_date = data['Date'].max()
             
             # Calculate start date based on time range
             if time_range == "1M":
-                start_date = current_date - pd.DateOffset(months=1)
+                start_date = latest_date - pd.DateOffset(months=1)
             elif time_range == "3M":
-                start_date = current_date - pd.DateOffset(months=3)
+                start_date = latest_date - pd.DateOffset(months=3)
             elif time_range == "6M":
-                start_date = current_date - pd.DateOffset(months=6)
+                start_date = latest_date - pd.DateOffset(months=6)
             elif time_range == "1Y":
-                start_date = current_date - pd.DateOffset(years=1)
+                start_date = latest_date - pd.DateOffset(years=1)
             else:
                 return data
                 
-            # Filter data
-            return data[data['Date'] >= start_date]
+            # Filter data and include the start date
+            filtered_data = data[data['Date'] >= start_date]
+            
+            if self.debug_mode:
+                logger.debug(f"Time range: {time_range}")
+                logger.debug(f"Start date: {start_date}")
+                logger.debug(f"Latest date: {latest_date}")
+                logger.debug(f"Filtered data shape: {filtered_data.shape}")
+                
+            return filtered_data
             
         except Exception as e:
             logger.error(f"Error filtering data by time range: {e}")
@@ -211,8 +219,8 @@ class FinanceDashboard:
     def plot_income_vs_expenses(self) -> go.Figure:
         """Create income vs expenses bar chart with time range filter"""
         try:
-            income_data = st.session_state.finance_data['income']
-            expense_data = st.session_state.finance_data['expenses']
+            income_data = st.session_state.finance_data['income'].copy()
+            expense_data = st.session_state.finance_data['expenses'].copy()
             time_range = st.session_state.get('time_range', "6M")
             
             # Apply time filter
@@ -228,18 +236,22 @@ class FinanceDashboard:
             
             # Aggregate by month
             income_monthly = income_data.groupby(
-                income_data['Date'].dt.to_period('M')
+                pd.Grouper(key='Date', freq='M')
             )['Amount'].sum()
             
             expenses_monthly = expense_data.groupby(
-                expense_data['Date'].dt.to_period('M')
+                pd.Grouper(key='Date', freq='M')
             )['Amount'].sum()
+            
+            # Remove months with no data
+            income_monthly = income_monthly[income_monthly > 0]
+            expenses_monthly = expenses_monthly[expenses_monthly > 0]
             
             fig = go.Figure()
             
             # Add Income bars
             fig.add_trace(go.Bar(
-                x=income_monthly.index.astype(str),
+                x=income_monthly.index,
                 y=income_monthly.values,
                 name='Доходы',
                 marker_color='#2ecc71'
@@ -247,7 +259,7 @@ class FinanceDashboard:
             
             # Add Expenses bars
             fig.add_trace(go.Bar(
-                x=expenses_monthly.index.astype(str),
+                x=expenses_monthly.index,
                 y=expenses_monthly.values,
                 name='Расходы',
                 marker_color='#e74c3c'
@@ -262,7 +274,7 @@ class FinanceDashboard:
             )
             
             # Store available months for analysis
-            st.session_state.available_months = expenses_monthly.index.astype(str).tolist()
+            st.session_state.available_months = expenses_monthly.index.strftime('%Y-%m').tolist()
             
             return fig
             
@@ -323,14 +335,24 @@ class FinanceDashboard:
     def plot_expense_breakdown(self) -> go.Figure:
         """Create expense breakdown pie chart with time range filter"""
         try:
-            expense_data = st.session_state.finance_data['expenses']
+            expense_data = st.session_state.finance_data['expenses'].copy()
             time_range = st.session_state.get('time_range', "6M")
             
             # Apply time filter
             expense_data = self.get_time_filtered_data(expense_data, time_range)
             
+            # Get selected categories
+            selected_categories = st.session_state.get('selected_categories', 
+                                                     expense_data['Category'].unique())
+            
+            # Filter by selected categories
+            expense_data = expense_data[expense_data['Category'].isin(selected_categories)]
+            
             # Aggregate by category
             category_expenses = expense_data.groupby('Category')['Amount'].sum()
+            
+            # Remove categories with zero expenses
+            category_expenses = category_expenses[category_expenses > 0]
             
             fig = go.Figure(data=[go.Pie(
                 labels=category_expenses.index,
@@ -352,8 +374,8 @@ class FinanceDashboard:
     def plot_budget_vs_actual(self) -> go.Figure:
         """Create budget vs actual spending chart with time range filter"""
         try:
-            expense_data = st.session_state.finance_data['expenses']
-            budget_data = st.session_state.finance_data['budget']
+            expense_data = st.session_state.finance_data['expenses'].copy()
+            budget_data = st.session_state.finance_data['budget'].copy()
             time_range = st.session_state.get('time_range', "6M")
             
             # Apply time filter
@@ -363,7 +385,7 @@ class FinanceDashboard:
             selected_categories = st.session_state.get('selected_categories', 
                                                      expense_data['Category'].unique())
             
-            # Calculate total expenses for filtered period
+            # Calculate total expenses for filtered period and categories
             total_expenses = expense_data[
                 expense_data['Category'].isin(selected_categories)
             ].groupby('Category')['Amount'].sum()
