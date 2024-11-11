@@ -128,10 +128,42 @@ class FinanceDashboard:
             logger.error(f"Error loading financial data: {str(e)}")
             return False
 
+    def get_time_filtered_data(self, data: pd.DataFrame, time_range: str) -> pd.DataFrame:
+        """Filter data based on selected time range"""
+        try:
+            if time_range == "MAX":
+                return data
+                
+            # Get current date
+            current_date = pd.Timestamp.now()
+            
+            # Calculate start date based on time range
+            if time_range == "1M":
+                start_date = current_date - pd.DateOffset(months=1)
+            elif time_range == "3M":
+                start_date = current_date - pd.DateOffset(months=3)
+            elif time_range == "6M":
+                start_date = current_date - pd.DateOffset(months=6)
+            elif time_range == "1Y":
+                start_date = current_date - pd.DateOffset(years=1)
+            else:
+                return data
+                
+            # Filter data
+            return data[data['Date'] >= start_date]
+            
+        except Exception as e:
+            logger.error(f"Error filtering data by time range: {e}")
+            return data
+
     def plot_net_worth(self) -> go.Figure:
-        """Create net worth line chart"""
+        """Create net worth line chart with time range filter"""
         try:
             data = st.session_state.finance_data['net_worth']
+            time_range = st.session_state.get('time_range', "6M")
+            
+            # Apply time filter
+            data = self.get_time_filtered_data(data, time_range)
             
             fig = go.Figure()
             
@@ -177,12 +209,17 @@ class FinanceDashboard:
             return None
 
     def plot_income_vs_expenses(self) -> go.Figure:
-        """Create income vs expenses bar chart with category filtering and month selection"""
+        """Create income vs expenses bar chart with time range filter"""
         try:
             income_data = st.session_state.finance_data['income']
             expense_data = st.session_state.finance_data['expenses']
+            time_range = st.session_state.get('time_range', "6M")
             
-            # Get selected categories from session state
+            # Apply time filter
+            income_data = self.get_time_filtered_data(income_data, time_range)
+            expense_data = self.get_time_filtered_data(expense_data, time_range)
+            
+            # Get selected categories
             selected_categories = st.session_state.get('selected_categories', 
                                                      expense_data['Category'].unique())
             
@@ -284,9 +321,13 @@ class FinanceDashboard:
             st.error("Ошибка при отображении анализа")
 
     def plot_expense_breakdown(self) -> go.Figure:
-        """Create expense breakdown pie chart"""
+        """Create expense breakdown pie chart with time range filter"""
         try:
             expense_data = st.session_state.finance_data['expenses']
+            time_range = st.session_state.get('time_range', "6M")
+            
+            # Apply time filter
+            expense_data = self.get_time_filtered_data(expense_data, time_range)
             
             # Aggregate by category
             category_expenses = expense_data.groupby('Category')['Amount'].sum()
@@ -309,17 +350,23 @@ class FinanceDashboard:
             return None
 
     def plot_budget_vs_actual(self) -> go.Figure:
-        """Create budget vs actual spending chart with filtered categories"""
+        """Create budget vs actual spending chart with time range filter"""
         try:
             expense_data = st.session_state.finance_data['expenses']
             budget_data = st.session_state.finance_data['budget']
+            time_range = st.session_state.get('time_range', "6M")
             
-            # Get selected categories from session state
+            # Apply time filter
+            expense_data = self.get_time_filtered_data(expense_data, time_range)
+            
+            # Get selected categories
             selected_categories = st.session_state.get('selected_categories', 
                                                      expense_data['Category'].unique())
             
-            # Calculate total expenses for each category (all time)
-            total_expenses = expense_data[expense_data['Category'].isin(selected_categories)].groupby('Category')['Amount'].sum()
+            # Calculate total expenses for filtered period
+            total_expenses = expense_data[
+                expense_data['Category'].isin(selected_categories)
+            ].groupby('Category')['Amount'].sum()
             
             # Filter budget data by selected categories
             budget_data = budget_data[budget_data['Category'].isin(selected_categories)]
@@ -490,14 +537,19 @@ class FinanceDashboard:
     def add_chart_interactions(self) -> None:
         """Add interactive elements to the dashboard"""
         try:
-            # Time range selector for Net Worth chart
+            # Time range selector for charts
             st.subheader("Настройки отображения")
             time_range = st.select_slider(
                 "Период времени",
                 options=["1M", "3M", "6M", "1Y", "MAX"],
-                value="6M"
+                value=st.session_state.get('time_range', "6M"),
+                help="Выберите период времени для отображения данных на графиках"
             )
             
+            # Update time range in session state
+            if time_range != st.session_state.get('time_range'):
+                st.session_state.time_range = time_range
+                
             # Category filters for multiple charts
             expense_data = st.session_state.finance_data['expenses']
             categories = sorted(expense_data['Category'].unique())
@@ -525,9 +577,6 @@ class FinanceDashboard:
             if selected_categories != st.session_state.selected_categories:
                 st.session_state.selected_categories = selected_categories
             
-            # Store time range in session state
-            st.session_state.time_range = time_range
-            
             if len(selected_categories) == 0:
                 st.warning("Пожалуйста, выберите хотя бы одну категорию")
             
@@ -554,7 +603,7 @@ def main():
        - Assets: Активы
        - Liabilities: Обязательства
     
-    2. **Income Table** (До��оды)
+    2. **Income Table** (Дооды)
        - IncomeID: ID дохода
        - Date: Дата
        - Source: Источник
