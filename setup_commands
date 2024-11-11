@@ -1,0 +1,2 @@
+mkdir -p pages utils config data
+touch app.py requirements.txt pages/authentication.py pages/dashboard.py utils/helpers.py config/config.yaml 
