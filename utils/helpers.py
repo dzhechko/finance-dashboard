@@ -70,11 +70,20 @@ def validate_excel_file(file) -> bool:
     """Validate uploaded Excel file structure"""
     try:
         required_sheets = ["Net Worth Table", "Income Table", "Expenses Table", "Budget Table"]
-        excel_data = pd.read_excel(file, sheet_name=None)
+        
+        # Try to read the Excel file
+        try:
+            excel_data = pd.read_excel(file, sheet_name=None)
+            if self.debug_mode:
+                logger.debug(f"Successfully read Excel file. Found sheets: {list(excel_data.keys())}")
+        except Exception as e:
+            logger.error(f"Failed to read Excel file: {e}")
+            return False
         
         # Check if all required sheets exist
-        if not all(sheet in excel_data for sheet in required_sheets):
-            logger.error("Missing required sheets in Excel file")
+        missing_sheets = [sheet for sheet in required_sheets if sheet not in excel_data]
+        if missing_sheets:
+            logger.error(f"Missing sheets in Excel file: {missing_sheets}")
             return False
             
         # Validate sheet structures
@@ -85,10 +94,29 @@ def validate_excel_file(file) -> bool:
             "Budget Table": ["Category", "BudgetAmount"]
         }
         
-        for sheet, columns in validations.items():
-            if not all(col in excel_data[sheet].columns for col in columns):
-                logger.error(f"Missing required columns in {sheet}")
+        for sheet, required_columns in validations.items():
+            actual_columns = excel_data[sheet].columns.tolist()
+            missing_columns = [col for col in required_columns if col not in actual_columns]
+            
+            if missing_columns:
+                logger.error(f"Sheet '{sheet}' is missing columns: {missing_columns}")
+                logger.error(f"Available columns: {actual_columns}")
                 return False
+            
+            # Additional validation for date columns
+            if "Date" in required_columns:
+                try:
+                    pd.to_datetime(excel_data[sheet]["Date"])
+                except Exception as e:
+                    logger.error(f"Invalid date format in {sheet}: {e}")
+                    return False
+            
+            # Additional validation for numeric columns
+            numeric_columns = ["Amount", "Assets", "Liabilities", "BudgetAmount"]
+            for col in [c for c in required_columns if c in numeric_columns]:
+                if not pd.to_numeric(excel_data[sheet][col], errors='coerce').notna().all():
+                    logger.error(f"Invalid numeric values in {sheet}.{col}")
+                    return False
                 
         logger.debug("Excel file validation successful")
         return True

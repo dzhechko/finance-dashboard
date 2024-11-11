@@ -17,24 +17,45 @@ class FinanceDashboard:
     def load_data(self, file) -> bool:
         """Load and validate Excel data"""
         try:
+            if self.debug_mode:
+                logger.debug(f"Attempting to load file: {file.name}")
+            
+            # Reset file pointer to beginning
+            file.seek(0)
+            
             if validate_excel_file(file):
-                data = {
-                    'net_worth': pd.read_excel(file, sheet_name="Net Worth Table"),
-                    'income': pd.read_excel(file, sheet_name="Income Table"),
-                    'expenses': pd.read_excel(file, sheet_name="Expenses Table"),
-                    'budget': pd.read_excel(file, sheet_name="Budget Table")
-                }
+                # Reset file pointer again before reading
+                file.seek(0)
                 
-                # Convert dates
-                data['net_worth']['Date'] = pd.to_datetime(data['net_worth']['Date'])
-                data['income']['Date'] = pd.to_datetime(data['income']['Date'])
-                data['expenses']['Date'] = pd.to_datetime(data['expenses']['Date'])
-                
-                st.session_state.finance_data = data
+                try:
+                    data = {
+                        'net_worth': pd.read_excel(file, sheet_name="Net Worth Table"),
+                        'income': pd.read_excel(file, sheet_name="Income Table"),
+                        'expenses': pd.read_excel(file, sheet_name="Expenses Table"),
+                        'budget': pd.read_excel(file, sheet_name="Budget Table")
+                    }
+                    
+                    # Convert dates
+                    for key in ['net_worth', 'income', 'expenses']:
+                        try:
+                            data[key]['Date'] = pd.to_datetime(data[key]['Date'])
+                        except Exception as e:
+                            logger.error(f"Error converting dates in {key}: {e}")
+                            return False
+                    
+                    st.session_state.finance_data = data
+                    if self.debug_mode:
+                        logger.debug("Financial data loaded successfully")
+                        for key, df in data.items():
+                            logger.debug(f"{key} shape: {df.shape}")
+                    return True
+                except Exception as e:
+                    logger.error(f"Error reading Excel sheets: {e}")
+                    return False
+            else:
                 if self.debug_mode:
-                    logger.debug("Financial data loaded successfully")
-                return True
-            return False
+                    logger.debug("File validation failed")
+                return False
         except Exception as e:
             logger.error(f"Error loading financial data: {e}")
             return False
@@ -366,13 +387,43 @@ def main():
     
     dashboard = FinanceDashboard()
     
-    # File upload section
+    # Add sample template download
+    st.markdown("""
+    ### Формат данных
+    Файл Excel должен со��ержать с��едующие листы:
+    1. **Net Worth Table** (Чистая стоимость)
+       - Date: Дата
+       - Assets: Активы
+       - Liabilities: Обязательства
+    
+    2. **Income Table** (Доходы)
+       - IncomeID: ID дохода
+       - Date: Дата
+       - Source: Источник
+       - Amount: Сумма
+    
+    3. **Expenses Table** (Расходы)
+       - ExpenseID: ID расхода
+       - Date: Дата
+       - Category: Категория
+       - Description: Описание
+       - Amount: Сумма
+    
+    4. **Budget Table** (Бюджет)
+       - Category: Категория
+       - BudgetAmount: Сумма бюджета
+    """)
+    
+    # File upload section with clearer instructions
+    st.markdown("### Загрузка данных")
     uploaded_file = st.file_uploader(
-        "Загрузите файл Excel с финансовыми данными",
-        type=["xlsx"]
+        "Загрузите файл Excel с финансовыми данными (.xlsx)",
+        type=["xlsx"],
+        help="Файл должен содержать все необходимые листы и колонки"
     )
     
     if uploaded_file is not None:
+        with st.spinner("Загрузка и проверка данных..."):
         if dashboard.load_data(uploaded_file):
             # Render insights sidebar
             dashboard.render_insights_sidebar()
@@ -445,7 +496,14 @@ def main():
                             - Превышение: {warning['overspend']:,.0f} ₽
                             """)
         else:
-            st.error("Ошибка при загрузке файла. Проверьте формат данных.")
+                st.error("""
+                Ошибка при загрузке файла. Проверьте формат данных:
+                - Все необходимые листы присутствуют
+                - Все колонки имеют правильные названия
+                - Даты в правильном формате
+                - Числовые значения корректны
+                """)
+                st.info("Включите режим отладки в настройках для получения подробной информации об ошибке.")
 
 if __name__ == "__main__":
     main() 
