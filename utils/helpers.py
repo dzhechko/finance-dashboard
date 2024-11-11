@@ -25,18 +25,46 @@ def load_config() -> Dict[str, Any]:
         with open("config/config.yaml", "r", encoding="utf-8") as file:
             config = yaml.safe_load(file)
             
+        if config is None:
+            config = {}
+        
+        # Ensure required sections exist
+        if 'settings' not in config:
+            config['settings'] = {}
+        if 'cookie' not in config:
+            config['cookie'] = {}
+        if 'credentials' not in config:
+            config['credentials'] = {'usernames': {}}
+            
         # Override with environment variables
         config['settings']['debug'] = os.getenv('DEBUG', 'false').lower() == 'true'
         config['settings']['auth_required'] = os.getenv('AUTH_REQUIRED', 'true').lower() == 'true'
         
         # Update cookie settings
-        config['cookie']['key'] = os.getenv('AUTH_SECRET_KEY', config['cookie']['key'])
+        config['cookie']['key'] = os.getenv('AUTH_SECRET_KEY', 
+                                          config['cookie'].get('key', 'default_secret_key'))
+        config['cookie']['name'] = config['cookie'].get('name', 'finance_dashboard_cookie')
+        config['cookie']['expiry_days'] = int(config['cookie'].get('expiry_days', 30))
         
         logger.debug("Configuration loaded successfully")
         return config
     except Exception as e:
         logger.error(f"Error loading configuration: {e}")
-        raise
+        # Return default configuration if loading fails
+        return {
+            'settings': {
+                'debug': False,
+                'auth_required': True
+            },
+            'cookie': {
+                'key': os.getenv('AUTH_SECRET_KEY', 'default_secret_key'),
+                'name': 'finance_dashboard_cookie',
+                'expiry_days': 30
+            },
+            'credentials': {
+                'usernames': {}
+            }
+        }
 
 def validate_excel_file(file) -> bool:
     """Validate uploaded Excel file structure"""

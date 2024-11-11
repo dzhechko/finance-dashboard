@@ -26,7 +26,10 @@ def health_check():
         }
 
 def main():
-    if 'health_check' in st.experimental_get_query_params():
+    # Update deprecated experimental_get_query_params to query_params
+    query_params = st.query_params
+    
+    if 'health_check' in query_params:
         st.json(health_check())
         return
 

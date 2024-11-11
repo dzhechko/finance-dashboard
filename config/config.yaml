@@ -1,9 +1,10 @@
 credentials:
   usernames: {}
-  cookie:
-    expiry_days: 30
-    key: "random_signature_key_replace_this_in_production"  # Change this in production
-    name: "finance_dashboard_cookie"
+
+cookie:
+  expiry_days: 30
+  key: "random_signature_key_replace_this_in_production"
+  name: "finance_dashboard_cookie"
 
 settings:
   debug: false
