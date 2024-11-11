@@ -128,10 +128,17 @@ class FinanceDashboard:
             return None
 
     def plot_income_vs_expenses(self) -> go.Figure:
-        """Create income vs expenses bar chart"""
+        """Create income vs expenses bar chart with category filtering"""
         try:
             income_data = st.session_state.finance_data['income']
             expense_data = st.session_state.finance_data['expenses']
+            
+            # Get selected categories from session state
+            selected_categories = st.session_state.get('selected_categories', 
+                                                     expense_data['Category'].unique())
+            
+            # Filter expenses by selected categories
+            expense_data = expense_data[expense_data['Category'].isin(selected_categories)]
             
             # Aggregate by month
             income_monthly = income_data.groupby(
@@ -200,10 +207,18 @@ class FinanceDashboard:
             return None
 
     def plot_budget_vs_actual(self) -> go.Figure:
-        """Create budget vs actual spending chart"""
+        """Create budget vs actual spending chart with filtered categories"""
         try:
             expense_data = st.session_state.finance_data['expenses']
             budget_data = st.session_state.finance_data['budget']
+            
+            # Get selected categories from session state
+            selected_categories = st.session_state.get('selected_categories', 
+                                                     expense_data['Category'].unique())
+            
+            # Filter expenses by selected categories
+            expense_data = expense_data[expense_data['Category'].isin(selected_categories)]
+            budget_data = budget_data[budget_data['Category'].isin(selected_categories)]
             
             # Get current month's expenses
             current_month = datetime.now().replace(day=1)
@@ -214,17 +229,18 @@ class FinanceDashboard:
             # Aggregate expenses by category
             actual_expenses = monthly_expenses.groupby('Category')['Amount'].sum()
             
-            # Merge with budget data
+            # Create comparison DataFrame with all categories
             comparison = pd.DataFrame({
-                'Budget': budget_data.set_index('Category')['BudgetAmount'],
-                'Actual': actual_expenses
-            }).fillna(0)
+                'Category': budget_data['Category'],
+                'Budget': budget_data['BudgetAmount'],
+                'Actual': [actual_expenses.get(cat, 0) for cat in budget_data['Category']]
+            })
             
             fig = go.Figure()
             
             # Add Budget bars
             fig.add_trace(go.Bar(
-                x=comparison.index,
+                x=comparison['Category'],
                 y=comparison['Budget'],
                 name='Бюджет',
                 marker_color='#3498db'
@@ -232,7 +248,7 @@ class FinanceDashboard:
             
             # Add Actual spending bars
             fig.add_trace(go.Bar(
-                x=comparison.index,
+                x=comparison['Category'],
                 y=comparison['Actual'],
                 name='Фактические расходы',
                 marker_color='#e74c3c'
@@ -384,18 +400,22 @@ class FinanceDashboard:
                 value="6M"
             )
             
-            # Category filters for Expense Breakdown
+            # Category filters for multiple charts
             expense_data = st.session_state.finance_data['expenses']
-            categories = expense_data['Category'].unique()
+            categories = sorted(expense_data['Category'].unique())
             selected_categories = st.multiselect(
                 "Фильтр категорий расходов",
                 categories,
-                default=categories
+                default=categories,
+                help="Выберите категории для отображения в графиках расходов и бюджета"
             )
             
             # Update session state
             st.session_state.time_range = time_range
             st.session_state.selected_categories = selected_categories
+            
+            if len(selected_categories) == 0:
+                st.warning("Пожалуйста, выберите хотя бы одну категорию")
             
         except Exception as e:
             logger.error(f"Error adding chart interactions: {e}")
