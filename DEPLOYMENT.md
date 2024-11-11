@@ -21,42 +21,43 @@
    - Select your repository
 
 3. **Configure Environment Variables**
-   In Railway.app dashboard, add the following variables:
-   - `AUTH_SECRET_KEY`: Your secure secret key
-   - `DEBUG`: false
-   - `AUTH_REQUIRED`: true
-   - `LOG_LEVEL`: INFO
-   - `PORT`: 8501
+   In Railway.app dashboard:
+   - Go to your project
+   - Click on your deployment/service
+   - Go to the "Variables" tab
+   - Add the following variables:
+   ```
+   AUTH_SECRET_KEY=<generate_a_secure_random_key>
+   DEBUG=true
+   AUTH_REQUIRED=true
+   LOG_LEVEL=INFO
+   RAILWAY_ENVIRONMENT=true
+   PORT=8501
+   ```
+
+   Note: Generate a secure random key for AUTH_SECRET_KEY. Never use the default value.
 
 4. **Deploy**
    Railway will automatically deploy your application when you push to the main branch.
 
-5. **Verify Deployment**
-   - Check the deployment logs in Railway.app dashboard
-   - Visit your application URL
-   - Test authentication and file upload functionality
+5. **Verify Environment Variables**
+   - Check the deployment logs to ensure variables are loaded
+   - Test the application functionality
+   - Verify debug logging is working if DEBUG=true
 
 ## Troubleshooting
 
-1. **Logs**
-   - Check Railway.app deployment logs
-   - Check application logs in the dashboard
+1. **Environment Variables**
+   - Check Railway.app dashboard to ensure all variables are set
+   - Verify variable names match exactly (they are case-sensitive)
+   - Check deployment logs for any environment-related errors
 
-2. **Common Issues**
-   - Port conflicts: Make sure `PORT` environment variable is set
-   - Authentication issues: Verify `AUTH_SECRET_KEY` is set
-   - File permissions: Ensure temp directories are writable
+2. **Logs**
+   - In Railway dashboard, check deployment logs
+   - Look for environment variable loading messages
+   - Enable DEBUG=true temporarily for more detailed logs
 
-## Maintenance
-
-1. **Updates**
-   - Push changes to GitHub
-   - Railway will automatically redeploy
-
-2. **Monitoring**
-   - Use Railway.app metrics dashboard
-   - Check application logs regularly
-
-3. **Backup**
-   - Regularly backup configuration
-   - Export important data 
+3. **Common Issues**
+   - PORT conflicts: Ensure PORT is set to 8501
+   - Authentication issues: Verify AUTH_SECRET_KEY is set
+   - Debug mode: Set DEBUG=true to see detailed logs

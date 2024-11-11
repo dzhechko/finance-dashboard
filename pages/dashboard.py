@@ -15,7 +15,7 @@ class FinanceDashboard:
             st.session_state.finance_data = None
 
     def load_data(self, file) -> bool:
-        """Load and validate Excel data"""
+        """Load and validate Excel data with enhanced error reporting"""
         try:
             if self.debug_mode:
                 logger.debug(f"Attempting to load file: {file.name}")
@@ -28,36 +28,55 @@ class FinanceDashboard:
                 file.seek(0)
                 
                 try:
-                    data = {
-                        'net_worth': pd.read_excel(file, sheet_name="Net Worth Table"),
-                        'income': pd.read_excel(file, sheet_name="Income Table"),
-                        'expenses': pd.read_excel(file, sheet_name="Expenses Table"),
-                        'budget': pd.read_excel(file, sheet_name="Budget Table")
+                    data = {}
+                    sheets_to_load = {
+                        'net_worth': "Net Worth Table",
+                        'income': "Income Table",
+                        'expenses': "Expenses Table",
+                        'budget': "Budget Table"
                     }
                     
-                    # Convert dates
+                    for key, sheet_name in sheets_to_load.items():
+                        try:
+                            df = pd.read_excel(file, sheet_name=sheet_name)
+                            if self.debug_mode:
+                                logger.debug(f"Loaded {sheet_name} with shape {df.shape}")
+                                logger.debug(f"Columns: {df.columns.tolist()}")
+                                logger.debug(f"Data types: {df.dtypes.to_dict()}")
+                            data[key] = df
+                        except Exception as e:
+                            logger.error(f"Error loading sheet {sheet_name}: {str(e)}")
+                            return False
+                    
+                    # Convert dates with explicit format
+                    date_format = '%Y-%m-%d'  # Adjust this based on your Excel date format
                     for key in ['net_worth', 'income', 'expenses']:
                         try:
-                            data[key]['Date'] = pd.to_datetime(data[key]['Date'])
+                            if isinstance(data[key]['Date'].iloc[0], str):
+                                data[key]['Date'] = pd.to_datetime(data[key]['Date'], format=date_format)
+                            else:
+                                data[key]['Date'] = pd.to_datetime(data[key]['Date'])
+                            
+                            if self.debug_mode:
+                                logger.debug(f"Converted dates in {key}: {data[key]['Date'].head()}")
                         except Exception as e:
-                            logger.error(f"Error converting dates in {key}: {e}")
+                            logger.error(f"Error converting dates in {key}: {str(e)}")
+                            logger.error(f"Sample date values: {data[key]['Date'].head()}")
                             return False
                     
                     st.session_state.finance_data = data
-                    if self.debug_mode:
-                        logger.debug("Financial data loaded successfully")
-                        for key, df in data.items():
-                            logger.debug(f"{key} shape: {df.shape}")
+                    logger.info("Financial data loaded successfully")
                     return True
+                    
                 except Exception as e:
-                    logger.error(f"Error reading Excel sheets: {e}")
+                    logger.error(f"Error reading Excel sheets: {str(e)}")
                     return False
             else:
                 if self.debug_mode:
                     logger.debug("File validation failed")
                 return False
         except Exception as e:
-            logger.error(f"Error loading financial data: {e}")
+            logger.error(f"Error loading financial data: {str(e)}")
             return False
 
     def plot_net_worth(self) -> go.Figure:
@@ -390,7 +409,7 @@ def main():
     # Add sample template download
     st.markdown("""
     ### Формат данных
-    Файл Excel дол��ен содержать следующие листы:
+    Файл Excel должен содержать следующие листы:
     1. **Net Worth Table** (Чистая стоимость)
        - Date: Дата
        - Assets: Активы
