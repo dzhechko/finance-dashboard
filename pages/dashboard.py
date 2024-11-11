@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-from utils.helpers import logger, get_debug_status, validate_excel_file
+from utils.helpers import logger, get_debug_status, validate_excel_file, get_auth_required
 from typing import Dict, Tuple, Any, List
 import numpy as np
 from datetime import datetime, timedelta
@@ -483,7 +483,7 @@ class FinanceDashboard:
             st.error("Ошибка при добавлении интерактивных элементов")
 
 def main():
-    st.title("Финансо��ый дашборд")
+    st.title("Финансоый дашборд")
     
     # Check authentication
     if not st.session_state.get('authenticated', False) and get_auth_required():
@@ -496,7 +496,7 @@ def main():
     st.markdown("""
     ### Формат данных
     Файл Excel должен содержать следующие листы:
-    1. **Net Worth Table** (Чистая ��тоимость)
+    1. **Net Worth Table** (Чистая тоимость)
        - Date: Дата
        - Assets: Активы
        - Liabilities: Обязательства
