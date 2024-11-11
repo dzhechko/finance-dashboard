@@ -390,7 +390,7 @@ def main():
     # Add sample template download
     st.markdown("""
     ### Формат данных
-    Файл Excel должен со��ержать с��едующие листы:
+    Файл Excel дол��ен содержать следующие листы:
     1. **Net Worth Table** (Чистая стоимость)
        - Date: Дата
        - Assets: Активы
@@ -424,78 +424,78 @@ def main():
     
     if uploaded_file is not None:
         with st.spinner("Загрузка и проверка данных..."):
-        if dashboard.load_data(uploaded_file):
-            # Render insights sidebar
-            dashboard.render_insights_sidebar()
-            
-            # Add interactive features
-            dashboard.add_chart_interactions()
-            
-            # Create tabs for different visualizations
-            tab1, tab2, tab3, tab4 = st.tabs([
-                "Чистая стоимость",
-                "Доходы и расходы",
-                "Структура расходов",
-                "Бюджет"
-            ])
-            
-            with tab1:
-                fig_net_worth = dashboard.plot_net_worth()
-                if fig_net_worth:
-                    st.plotly_chart(fig_net_worth, use_container_width=True)
-                    
-                    # Add explanatory text
-                    with st.expander("📊 Как читать этот график"):
-                        st.write("""
-                        - **Активы** (зеленая линия) показывают общую стоимость всего вашего имущества
-                        - **Обязательства** (красная линия) отображают ваши долги и задолженности
-                        - **Чистая стоимость** (синяя линия) - это разница между активами и обязательствами
-                        """)
-            
-            with tab2:
-                fig_income_expenses = dashboard.plot_income_vs_expenses()
-                if fig_income_expenses:
-                    st.plotly_chart(fig_income_expenses, use_container_width=True)
-                    
-                    # Add monthly analysis
-                    if st.checkbox("Показать детальный анализ"):
-                        insights = dashboard.calculate_insights()
-                        st.write(f"""
-                        💡 **Анализ за текущий месяц:**
-                        - Доходы: {insights['monthly']['income']:,.0f} ₽
-                        - Расходы: {insights['monthly']['expenses']:,.0f} ₽
-                        - Норма сбережений: {insights['monthly']['savings_rate']:.1f}%
-                        """)
-            
-            with tab3:
-                fig_expenses = dashboard.plot_expense_breakdown()
-                if fig_expenses:
-                    st.plotly_chart(fig_expenses, use_container_width=True)
-                    
-                    # Add top expenses analysis
-                    insights = dashboard.calculate_insights()
-                    st.write("🔍 **Топ-3 категории расходов:**")
-                    for cat, amount in zip(
-                        insights['top_expenses']['categories'][:3],
-                        insights['top_expenses']['amounts'][:3]
-                    ):
-                        st.write(f"- {cat}: {amount:,.0f} ₽")
-            
-            with tab4:
-                fig_budget = dashboard.plot_budget_vs_actual()
-                if fig_budget:
-                    st.plotly_chart(fig_budget, use_container_width=True)
-                    
-                    # Add budget warnings
-                    insights = dashboard.calculate_insights()
-                    if insights['budget_warnings']:
-                        st.warning("⚠️ Обнаружено превышение бюджета в следующих категориях:")
-                        for warning in insights['budget_warnings']:
-                            st.write(f"""
-                            **{warning['category']}**
-                            - Превышение: {warning['overspend']:,.0f} ₽
+            if dashboard.load_data(uploaded_file):
+                # Render insights sidebar
+                dashboard.render_insights_sidebar()
+                
+                # Add interactive features
+                dashboard.add_chart_interactions()
+                
+                # Create tabs for different visualizations
+                tab1, tab2, tab3, tab4 = st.tabs([
+                    "Чистая стоимость",
+                    "Доходы и расходы",
+                    "Структура расходов",
+                    "Бюджет"
+                ])
+                
+                with tab1:
+                    fig_net_worth = dashboard.plot_net_worth()
+                    if fig_net_worth:
+                        st.plotly_chart(fig_net_worth, use_container_width=True)
+                        
+                        # Add explanatory text
+                        with st.expander("📊 Как читать этот график"):
+                            st.write("""
+                            - **Активы** (зеленая линия) показывают общую стоимость всего вашего имущества
+                            - **Обязательства** (красная линия) отображают ваши долги и задолженности
+                            - **Чистая стоимость** (синяя линия) - это разница между активами и обязательствами
                             """)
-        else:
+                
+                with tab2:
+                    fig_income_expenses = dashboard.plot_income_vs_expenses()
+                    if fig_income_expenses:
+                        st.plotly_chart(fig_income_expenses, use_container_width=True)
+                        
+                        # Add monthly analysis
+                        if st.checkbox("Показать детальный анализ"):
+                            insights = dashboard.calculate_insights()
+                            st.write(f"""
+                            💡 **Анализ за текущий месяц:**
+                            - Доходы: {insights['monthly']['income']:,.0f} ₽
+                            - Расходы: {insights['monthly']['expenses']:,.0f} ₽
+                            - Норма сбережений: {insights['monthly']['savings_rate']:.1f}%
+                            """)
+                
+                with tab3:
+                    fig_expenses = dashboard.plot_expense_breakdown()
+                    if fig_expenses:
+                        st.plotly_chart(fig_expenses, use_container_width=True)
+                        
+                        # Add top expenses analysis
+                        insights = dashboard.calculate_insights()
+                        st.write("🔍 **Топ-3 категории расходов:**")
+                        for cat, amount in zip(
+                            insights['top_expenses']['categories'][:3],
+                            insights['top_expenses']['amounts'][:3]
+                        ):
+                            st.write(f"- {cat}: {amount:,.0f} ₽")
+                
+                with tab4:
+                    fig_budget = dashboard.plot_budget_vs_actual()
+                    if fig_budget:
+                        st.plotly_chart(fig_budget, use_container_width=True)
+                        
+                        # Add budget warnings
+                        insights = dashboard.calculate_insights()
+                        if insights['budget_warnings']:
+                            st.warning("⚠️ Обнаружено превышение бюджета в следующих категориях:")
+                            for warning in insights['budget_warnings']:
+                                st.write(f"""
+                                **{warning['category']}**
+                                - Превышение: {warning['overspend']:,.0f} ₽
+                                """)
+            else:
                 st.error("""
                 Ошибка при загрузке файла. Проверьте формат данных:
                 - Все необходимые листы присутствуют
