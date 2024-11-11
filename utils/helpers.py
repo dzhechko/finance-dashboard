@@ -3,23 +3,37 @@ from loguru import logger
 import yaml
 from typing import Dict, Any
 import pandas as pd
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Configure logger
+log_level = os.getenv("LOG_LEVEL", "INFO")
 logger.remove()  # Remove default handler
 logger.add(
     "logs/finance_app.log",
     rotation="500 MB",
     format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
-    level="DEBUG"
+    level=log_level
 )
 
 def load_config() -> Dict[str, Any]:
-    """Load configuration from config.yaml"""
+    """Load configuration from config.yaml and environment variables"""
     try:
+        # Load base configuration from file
         with open("config/config.yaml", "r", encoding="utf-8") as file:
             config = yaml.safe_load(file)
-            logger.debug("Configuration loaded successfully")
-            return config
+            
+        # Override with environment variables
+        config['settings']['debug'] = os.getenv('DEBUG', 'false').lower() == 'true'
+        config['settings']['auth_required'] = os.getenv('AUTH_REQUIRED', 'true').lower() == 'true'
+        
+        # Update cookie settings
+        config['cookie']['key'] = os.getenv('AUTH_SECRET_KEY', config['cookie']['key'])
+        
+        logger.debug("Configuration loaded successfully")
+        return config
     except Exception as e:
         logger.error(f"Error loading configuration: {e}")
         raise

@@ -1,6 +1,8 @@
 import streamlit as st
 from utils.helpers import load_config, logger, get_debug_status, get_auth_required
 import yaml
+import os
+from datetime import datetime
 
 # Configure page settings
 st.set_page_config(
@@ -14,7 +16,20 @@ st.set_page_config(
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
+def health_check():
+    """Health check endpoint for Railway.app"""
+    if st.session_state.get('health_check'):
+        return {
+            "status": "healthy",
+            "timestamp": datetime.now().isoformat(),
+            "version": "1.0.0"
+        }
+
 def main():
+    if 'health_check' in st.experimental_get_query_params():
+        st.json(health_check())
+        return
+
     try:
         # Load configuration
         config = load_config()
