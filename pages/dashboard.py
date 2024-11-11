@@ -269,25 +269,21 @@ class FinanceDashboard:
             selected_categories = st.session_state.get('selected_categories', 
                                                      expense_data['Category'].unique())
             
-            # Filter expenses by selected categories
-            expense_data = expense_data[expense_data['Category'].isin(selected_categories)]
+            # Calculate total expenses for each category (all time)
+            total_expenses = expense_data[expense_data['Category'].isin(selected_categories)].groupby('Category')['Amount'].sum()
+            
+            # Filter budget data by selected categories
             budget_data = budget_data[budget_data['Category'].isin(selected_categories)]
             
-            # Get current month's expenses
-            current_month = datetime.now().replace(day=1)
-            monthly_expenses = expense_data[
-                expense_data['Date'].dt.to_period('M') == pd.Period(current_month, freq='M')
-            ]
-            
-            # Aggregate expenses by category
-            actual_expenses = monthly_expenses.groupby('Category')['Amount'].sum()
-            
-            # Create comparison DataFrame with all categories
+            # Create comparison DataFrame
             comparison = pd.DataFrame({
                 'Category': budget_data['Category'],
                 'Budget': budget_data['BudgetAmount'],
-                'Actual': [actual_expenses.get(cat, 0) for cat in budget_data['Category']]
+                'Actual': [total_expenses.get(cat, 0) for cat in budget_data['Category']]
             })
+            
+            if self.debug_mode:
+                logger.debug(f"Budget comparison data:\n{comparison}")
             
             fig = go.Figure()
             
@@ -464,16 +460,24 @@ class FinanceDashboard:
                     st.session_state.selected_categories = categories
             
             with col2:
+                # Use session state to maintain selected categories across reruns
+                if 'selected_categories' not in st.session_state:
+                    st.session_state.selected_categories = categories
+                    
                 selected_categories = st.multiselect(
                     "Фильтр категорий расходов",
                     categories,
-                    default=st.session_state.get('selected_categories', categories),
-                    help="Выберите категории для отображения в графиках расходов и бюджета"
+                    default=st.session_state.selected_categories,
+                    help="Выберите категории для отображения в графиках расходов и бюджета",
+                    key='category_filter'  # Add unique key
                 )
             
-            # Update session state
+            # Update session state only if selection changed
+            if selected_categories != st.session_state.selected_categories:
+                st.session_state.selected_categories = selected_categories
+            
+            # Store time range in session state
             st.session_state.time_range = time_range
-            st.session_state.selected_categories = selected_categories
             
             if len(selected_categories) == 0:
                 st.warning("Пожалуйста, выберите хотя бы одну категорию")
@@ -483,7 +487,7 @@ class FinanceDashboard:
             st.error("Ошибка при добавлении интерактивных элементов")
 
 def main():
-    st.title("Финансоый дашборд")
+    st.title("Финансовый дашборд")
     
     # Check authentication
     if not st.session_state.get('authenticated', False) and get_auth_required():
