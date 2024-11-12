@@ -39,6 +39,11 @@ st.markdown("""
         h1, h2, h3, h4, h5, h6 {
             color: #FFFFFF !important;
         }
+        
+        /* Скрыть пункт меню "app" */
+        [data-testid="stSidebarNav"] ul li:first-child {
+            display: none;
+        }
     </style>
 """, unsafe_allow_html=True)
 
