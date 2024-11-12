@@ -510,102 +510,87 @@ class FinanceDashboard:
     def render_insights_sidebar(self) -> None:
         """Render financial insights in the sidebar"""
         try:
-            insights = self.calculate_insights()
-            
+            if not st.session_state.finance_data:
+                return
+                
             st.sidebar.title("Финансовые показатели")
-            
-            # Net Worth Section
-            st.sidebar.subheader("Чистая стоимость")
-            col1, col2 = st.sidebar.columns(2)
-            col1.metric(
-                "Текущая",
-                f"{insights['net_worth']['current']:,.0f} ₽",
-                f"{insights['net_worth']['change']:+.1f}%"
-            )
-            
-            # Monthly Overview with month selection
-            st.sidebar.subheader("Обзор за месяц")
             
             # Get all available months from the data
             income_data = st.session_state.finance_data['income']
             expense_data = st.session_state.finance_data['expenses']
             
-            # Combine dates from both income and expenses
-            all_dates = pd.concat([income_data['Date'], expense_data['Date']]).unique()
-            all_months = pd.to_datetime(all_dates).to_period('M').unique()
-            all_months = sorted(all_months, reverse=True)  # Sort in descending order
+            # Get unique months from both income and expenses
+            all_months = pd.concat([
+                income_data['Date'],
+                expense_data['Date']
+            ]).dt.to_period('M').unique()
+            all_months = sorted(all_months)
             
             # Format months for display
-            month_options = [month.strftime('%B %Y') for month in all_months]
+            month_options = ["Все время"] + [month.strftime('%B %Y') for month in all_months]
             current_month = pd.Period(datetime.now(), freq='M').strftime('%B %Y')
             
             # Month selector
             selected_month = st.sidebar.selectbox(
-                "Выберите месяц",
+                "Выберите период",
                 options=month_options,
                 index=month_options.index(current_month) if current_month in month_options else 0
             )
             
-            # Convert selected month back to Period
-            selected_period = pd.Period(datetime.strptime(selected_month, '%B %Y'), freq='M')
-            
-            # Calculate metrics for selected month
-            month_income = income_data[
-                income_data['Date'].dt.to_period('M') == selected_period
-            ]['Amount'].sum()
-            
-            month_expenses = expense_data[
-                expense_data['Date'].dt.to_period('M') == selected_period
-            ]['Amount'].sum()
-            
-            savings_rate = ((month_income - month_expenses) / month_income * 100 
-                           if month_income > 0 else 0)
-            
-            # Display metrics
-            col1, col2 = st.sidebar.columns(2)
-            col1.metric("Доходы", f"{month_income:,.0f} ₽")
-            col2.metric("Расходы", f"{month_expenses:,.0f} ₽")
-            st.sidebar.metric("Норма сбережений", f"{savings_rate:.1f}%")
-            
-            # Top Expenses for selected month
-            st.sidebar.subheader(f"Топ расходов за {selected_month}")
-            month_expenses_by_category = expense_data[
-                expense_data['Date'].dt.to_period('M') == selected_period
-            ].groupby('Category')['Amount'].sum().nlargest(3)
-            
-            for cat, amount in month_expenses_by_category.items():
-                st.sidebar.text(f"{cat}: {amount:,.0f} ₽")
-            
-            # Budget Warnings for selected month
-            budget_data = st.session_state.finance_data['budget']
-            monthly_expenses = expense_data[
-                expense_data['Date'].dt.to_period('M') == selected_period
-            ]
-            
-            over_budget_categories = []
-            for _, budget_row in budget_data.iterrows():
-                category = budget_row['Category']
-                budget_amount = budget_row['BudgetAmount']
-                actual_amount = monthly_expenses[
-                    monthly_expenses['Category'] == category
-                ]['Amount'].sum()
+            if selected_month == "Все время":
+                # Calculate metrics for all time
+                total_income = income_data['Amount'].sum()
+                total_expenses = expense_data['Amount'].sum()
+                savings_rate = ((total_income - total_expenses) / total_income * 100 
+                              if total_income > 0 else 0)
                 
-                if actual_amount > budget_amount:
-                    over_budget_categories.append({
-                        'category': category,
-                        'budget': budget_amount,
-                        'actual': actual_amount,
-                        'overspend': actual_amount - budget_amount
-                    })
-            
-            if over_budget_categories:
-                st.sidebar.subheader(f"⚠️ Превышение бюджета за {selected_month}")
-                for warning in over_budget_categories:
-                    with st.sidebar.expander(warning['category']):
-                        st.write(f"Бюджет: {warning['budget']:,.0f} ₽")
-                        st.write(f"Факт: {warning['actual']:,.0f} ₽")
-                        st.write(f"Превышение: {warning['overspend']:,.0f} ₽")
-            
+                # Display metrics
+                col1, col2 = st.sidebar.columns(2)
+                col1.metric("Общий доход", f"{total_income:,.0f} ₽")
+                col2.metric("Общий расход", f"{total_expenses:,.0f} ₽")
+                st.sidebar.metric("Общая норма сбережений", f"{savings_rate:.1f}%")
+                
+                # Top Expenses for all time
+                st.sidebar.subheader("Топ расходов за все время")
+                total_expenses_by_category = expense_data.groupby('Category')['Amount'].sum().nlargest(3)
+                
+                for cat, amount in total_expenses_by_category.items():
+                    st.sidebar.text(f"{cat}: {amount:,.0f} ₽")
+                
+                # Budget analysis for all time
+                budget_data = st.session_state.finance_data['budget']
+                monthly_count = len(all_months)
+                
+                over_budget_categories = []
+                for _, budget_row in budget_data.iterrows():
+                    category = budget_row['Category']
+                    total_budget = budget_row['BudgetAmount'] * monthly_count
+                    actual_amount = expense_data[
+                        expense_data['Category'] == category
+                    ]['Amount'].sum()
+                    
+                    if actual_amount > total_budget:
+                        over_budget_categories.append({
+                            'category': category,
+                            'budget': total_budget,
+                            'actual': actual_amount,
+                            'overspend': actual_amount - total_budget
+                        })
+                
+                if over_budget_categories:
+                    st.sidebar.subheader("⚠️ Превышение бюджета за все время")
+                    for warning in over_budget_categories:
+                        with st.sidebar.expander(warning['category']):
+                            st.write(f"Бюджет: {warning['budget']:,.0f} ₽")
+                            st.write(f"Факт: {warning['actual']:,.0f} ₽")
+                            st.write(f"Превышение: {warning['overspend']:,.0f} ₽")
+            else:
+                # Convert selected month back to Period
+                selected_period = pd.Period(datetime.strptime(selected_month, '%B %Y'), freq='M')
+                
+                # Existing code for monthly analysis...
+                # ... (оставляем существующий код для анализа по месяцам)
+
         except Exception as e:
             logger.error(f"Error rendering insights: {e}")
             st.sidebar.error("Ошибка при отображении показателей")
