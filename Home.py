@@ -44,6 +44,16 @@ st.markdown("""
         [data-testid="stSidebarNav"] ul li:first-child {
             display: none;
         }
+        
+        /* Скрыть пункт меню "app" */
+        [data-testid="stSidebarNav"] ul li a[href="/"] {
+            display: none;
+        }
+        
+        /* Также скрыть сам пункт списка */
+        [data-testid="stSidebarNav"] ul li:has(a[href="/"]) {
+            display: none;
+        }
     </style>
 """, unsafe_allow_html=True)
 
