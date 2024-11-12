@@ -31,7 +31,14 @@ def health_check():
         }
 
 def main():
-    # Update deprecated experimental_get_query_params to query_params
+    # Добавим редирект в начало функции main
+    if st.session_state.get('authenticated'):
+        current_page = st.query_params.get("page", "")
+        if not current_page or current_page == "app":
+            st.switch_page("pages/dashboard.py")
+            return
+    
+    # Остальной код main() остается без изменений
     query_params = st.query_params
     
     if 'health_check' in query_params:
