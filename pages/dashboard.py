@@ -585,11 +585,63 @@ class FinanceDashboard:
                             st.write(f"Факт: {warning['actual']:,.0f} ₽")
                             st.write(f"Превышение: {warning['overspend']:,.0f} ₽")
             else:
-                # Convert selected month back to Period
+                # Анализ по конкретному месяцу
                 selected_period = pd.Period(datetime.strptime(selected_month, '%B %Y'), freq='M')
                 
-                # Existing code for monthly analysis...
-                # ... (оставляем существующий код для анализа по месяцам)
+                # Расчет метрик для выбранного месяца
+                month_income = income_data[
+                    income_data['Date'].dt.to_period('M') == selected_period
+                ]['Amount'].sum()
+                
+                month_expenses = expense_data[
+                    expense_data['Date'].dt.to_period('M') == selected_period
+                ]['Amount'].sum()
+                
+                savings_rate = ((month_income - month_expenses) / month_income * 100 
+                              if month_income > 0 else 0)
+                
+                # Отображение метрик
+                col1, col2 = st.sidebar.columns(2)
+                col1.metric("Доход", f"{month_income:,.0f} ₽")
+                col2.metric("Расход", f"{month_expenses:,.0f} ₽")
+                st.sidebar.metric("Норма сбережений", f"{savings_rate:.1f}%")
+                
+                # Топ расходов за месяц
+                st.sidebar.subheader(f"Топ расходов за {selected_month}")
+                month_expenses_by_category = expense_data[
+                    expense_data['Date'].dt.to_period('M') == selected_period
+                ].groupby('Category')['Amount'].sum().nlargest(3)
+                
+                for cat, amount in month_expenses_by_category.items():
+                    st.sidebar.text(f"{cat}: {amount:,.0f} ₽")
+                
+                # Анализ бюджета за месяц
+                budget_data = st.session_state.finance_data['budget']
+                over_budget_categories = []
+                
+                for _, budget_row in budget_data.iterrows():
+                    category = budget_row['Category']
+                    budget_amount = budget_row['BudgetAmount']
+                    actual_amount = expense_data[
+                        (expense_data['Date'].dt.to_period('M') == selected_period) &
+                        (expense_data['Category'] == category)
+                    ]['Amount'].sum()
+                    
+                    if actual_amount > budget_amount:
+                        over_budget_categories.append({
+                            'category': category,
+                            'budget': budget_amount,
+                            'actual': actual_amount,
+                            'overspend': actual_amount - budget_amount
+                        })
+                
+                if over_budget_categories:
+                    st.sidebar.subheader("⚠️ Превышение бюджета")
+                    for warning in over_budget_categories:
+                        with st.sidebar.expander(warning['category']):
+                            st.write(f"Бюджет: {warning['budget']:,.0f} ₽")
+                            st.write(f"Факт: {warning['actual']:,.0f} ₽")
+                            st.write(f"Превышение: {warning['overspend']:,.0f} ₽")
 
         except Exception as e:
             logger.error(f"Error rendering insights: {e}")
