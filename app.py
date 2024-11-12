@@ -76,11 +76,13 @@ if __name__ == "__main__":
     # Скрыть пункт меню app
     st.markdown("""
         <style>
-            [data-testid="stSidebarNav"] ul li a[href="/app"] {
-                display: none;
-            }
-            [data-testid="stSidebarNav"] ul li:has(a[href="/app"]) {
-                display: none;
+            /* Более агрессивный вариант скрытия */
+            section[data-testid="stSidebarNav"] li div:first-child {
+                visibility: hidden;
+                height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                opacity: 0;
             }
         </style>
     """, unsafe_allow_html=True)
