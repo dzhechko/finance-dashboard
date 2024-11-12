@@ -8,7 +8,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import calendar
 
-# Configure page settings with dark theme
+# Configure page settings
 st.set_page_config(
     page_title="Личный Финансовый Дашборд",
     page_icon="💰",
@@ -18,48 +18,36 @@ st.set_page_config(
         'Get Help': None,
         'Report a bug': None,
         'About': None
-    },
-    theme={
-        "base": "dark",
-        "primaryColor": "#3498db",
-        "backgroundColor": "#0e1117",
-        "secondaryBackgroundColor": "#262730",
-        "textColor": "#fafafa",
     }
 )
 
 # Set dark theme
 st.markdown("""
     <style>
-        /* Main background */
+        /* Main container */
         .stApp {
-            background-color: #0e1117;
-            color: #fafafa;
+            background-color: #0E1117;
         }
         
         /* Sidebar */
-        .css-1d391kg {
+        [data-testid="stSidebar"] {
             background-color: #262730;
         }
         
         /* Text color */
         .stMarkdown, .stText {
-            color: #fafafa;
+            color: #FFFFFF;
         }
         
         /* Headers */
         h1, h2, h3, h4, h5, h6 {
-            color: #fafafa !important;
+            color: #FFFFFF !important;
         }
         
-        /* Metric labels */
-        [data-testid="stMetricLabel"] {
-            color: #fafafa !important;
-        }
-        
-        /* Metric values */
+        /* Metric labels and values */
+        [data-testid="stMetricLabel"], 
         [data-testid="stMetricValue"] {
-            color: #fafafa !important;
+            color: #FFFFFF !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -369,7 +357,7 @@ class FinanceDashboard:
             )])
             
             fig.update_layout(
-                title='Структура расходов по категориям'
+                title='Структура ра��ходов по категориям'
             )
             
             return fig

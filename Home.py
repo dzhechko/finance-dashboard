@@ -4,7 +4,7 @@ import yaml
 import os
 from datetime import datetime
 
-# Configure page settings with dark theme
+# Configure page settings
 st.set_page_config(
     page_title="Личный Финансовый Дашборд",
     page_icon="💰",
@@ -14,15 +14,33 @@ st.set_page_config(
         'Get Help': None,
         'Report a bug': None,
         'About': None
-    },
-    theme={
-        "base": "dark",
-        "primaryColor": "#3498db",
-        "backgroundColor": "#0e1117",
-        "secondaryBackgroundColor": "#262730",
-        "textColor": "#fafafa",
     }
 )
+
+# Set dark theme
+st.markdown("""
+    <style>
+        /* Main container */
+        .stApp {
+            background-color: #0E1117;
+        }
+        
+        /* Sidebar */
+        [data-testid="stSidebar"] {
+            background-color: #262730;
+        }
+        
+        /* Text color */
+        .stMarkdown, .stText {
+            color: #FFFFFF;
+        }
+        
+        /* Headers */
+        h1, h2, h3, h4, h5, h6 {
+            color: #FFFFFF !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 def main():
     # Automatically redirect to Authentication page

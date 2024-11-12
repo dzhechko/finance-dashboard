@@ -6,7 +6,7 @@ from utils.helpers import logger, load_config, get_debug_status
 import bcrypt
 from typing import Dict, Optional
 
-# Configure page settings with dark theme
+# Configure page settings
 st.set_page_config(
     page_title="Личный Финансовый Дашборд",
     page_icon="💰",
@@ -16,32 +16,25 @@ st.set_page_config(
         'Get Help': None,
         'Report a bug': None,
         'About': None
-    },
-    theme={
-        "base": "dark",
-        "primaryColor": "#3498db",
-        "backgroundColor": "#0e1117",
-        "secondaryBackgroundColor": "#262730",
-        "textColor": "#fafafa",
     }
 )
 
-# Add dark theme styles
+# Set dark theme
 st.markdown("""
     <style>
         /* Main container */
         .stApp {
-            background-color: #0E1117 !important;
+            background-color: #0E1117;
         }
         
         /* Sidebar */
         [data-testid="stSidebar"] {
-            background-color: #262730 !important;
+            background-color: #262730;
         }
         
-        /* All text */
-        .stMarkdown, p, .stText {
-            color: #FFFFFF !important;
+        /* Text color */
+        .stMarkdown, .stText {
+            color: #FFFFFF;
         }
         
         /* Headers */
@@ -60,29 +53,6 @@ st.markdown("""
             background-color: #3498db !important;
             color: #FFFFFF !important;
             border: none !important;
-        }
-        
-        /* Button hover */
-        .stButton button:hover {
-            background-color: #2980b9 !important;
-        }
-        
-        /* Force dark theme */
-        [data-testid="stAppViewContainer"] {
-            background-color: #0E1117 !important;
-        }
-        
-        [data-testid="stHeader"] {
-            background-color: #0E1117 !important;
-        }
-        
-        [data-testid="stToolbar"] {
-            background-color: #0E1117 !important;
-        }
-        
-        /* Ensure text remains visible */
-        * {
-            color: #FFFFFF !important;
         }
     </style>
 """, unsafe_allow_html=True)
