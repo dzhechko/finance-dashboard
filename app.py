@@ -9,7 +9,12 @@ st.set_page_config(
     page_title="Личный Финансовый Дашборд",
     page_icon="💰",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': None,
+        'Report a bug': None,
+        'About': None
+    }
 )
 
 # Initialize session state
@@ -68,4 +73,16 @@ def main():
         st.error("Произошла ошибка при загрузке приложения")
 
 if __name__ == "__main__":
+    # Скрыть пункт меню app
+    st.markdown("""
+        <style>
+            [data-testid="stSidebarNav"] ul li a[href="/app"] {
+                display: none;
+            }
+            [data-testid="stSidebarNav"] ul li:has(a[href="/app"]) {
+                display: none;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+    
     main() 
